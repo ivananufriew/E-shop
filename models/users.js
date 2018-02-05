@@ -33,6 +33,10 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       defaultValue: sequelize.literal('CURRENT_TIMESTAMP')
     },
+    last_login_ip: {
+      type: DataTypes.STRING(100),
+      allowNull: false
+    },
     token: {
       type: DataTypes.STRING(3000),
       allowNull: false

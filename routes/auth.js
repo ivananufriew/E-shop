@@ -1,36 +1,53 @@
 const express       = require('express');
-const router        = express.Router();
+const Router        = express.Router();
 const bcrypt        = require('bcryptjs');
+const Path          = require('path');
+const Jwt           = require('jsonwebtoken');
+const checkToken    = require('../utils/checkOauthToken');
+const Sequelize     = require('../utils/db.config')();
 
-const Db            = require('../utils/db').connection();
 
-router.post('/', (req, res) => {
-  checkToken(req, res, app.get('secretKey'), jwt)
+const dir   = Path.join(__dirname, '../models');
+const Users = Sequelize.import(Path.join(dir, "users.js"));
+
+
+
+Router.post('/login', (req, res) => {
+
+  const secretKey = 'VG1wVk1FNTZVVEpPVlU5VVZUQk9hazE1VGtSRlBRPT0='+req.connection.remoteAddress;
+
+
+  checkToken(req, res, secretKey)
   .then(data => {
     res.json(data);
     res.json(req.cookie);
   })
   .catch(error => {
     if(req.body.login && req.body.login !=='' && req.body.password && req.body.password !=='') {
-      Db.getOneEntry('users','email', req.body.login, (data) => {
+      Users.findOne({where: {email: req.body.login}})
+      .then((data) => {
         if(data) {
           let password = req.body.password || '';
           if(bcrypt.compareSync(password, data.password)){
-            let generated_token = jwt.sign(
+            let generated_token = Jwt.sign(
               {
                 'otherKey': Math.random() * 145340.756468,
-                // Если, кпримеру, злоумышленник украдет куки, в котором токен,
-                // то он зайдет с другого айпи, и токен не пройдет. (защита от дурака)
-                'remoteAdress': req.connection.remoteAdress
               },
-              app.get('secretKey'), {
+              secretKey,
+              {
                 expiresIn: 1440, // expires in 24 hours
                 algorithm: 'HS384'
               });
-              // Db.updateUserByToken('users', 'token', generated_token, data.user_id);
+
               res.json({
                 'token' : generated_token
               });
+
+              Users.update({last_login_ip: req.connection.remoteAddress, last_login: Sequelize.literal('CURRENT_TIMESTAMP')},
+                { where: { user_id: data.user_id }})
+                .then(() => console.log('Token updated.'))
+                .catch(err => console.log('Err.'));
+
             }
             else {
               res.json({
@@ -57,4 +74,4 @@ router.post('/', (req, res) => {
   );
 });
 
-module.exports = router;
+module.exports = Router;

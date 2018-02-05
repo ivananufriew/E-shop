@@ -336,7 +336,7 @@ Router.post("/", Upload.single('preview'), (req,res) => {
 
 // Update goods
 
-app.put('/:id(\\d+)', (req, res) => {
+Router.put('/:id(\\d+)', (req, res) => {
   res.status(200).send("Coming soon !");
 });
 
