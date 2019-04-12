@@ -1,1 +1,2 @@
-# E-shop
+# Backend-part E-SHOP
+Using ExpressJS, Sequelize, JsonWebToken...
